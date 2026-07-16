@@ -1,0 +1,89 @@
+{
+  "mcpServers": {
+    "memory": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ]
+    },
+    "omega-memory": {
+      "command": "uvx",
+      "args": [
+        "omega-memory",
+        "serve"
+      ]
+    },
+    "longhand": {
+      "command": "longhand",
+      "args": [
+        "mcp-server"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-workers-builds": {
+      "type": "http",
+      "url": "https://builds.mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-workers-bindings": {
+      "type": "http",
+      "url": "https://bindings.mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-observability": {
+      "type": "http",
+      "url": "https://observability.mcp.cloudflare.com/mcp"
+    },
+    "clickhouse": {
+      "type": "http",
+      "url": "https://mcp.clickhouse.cloud/mcp"
+    },
+    "context7": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "magic": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@magicuidesign/mcp@latest"
+      ]
+    },
+    "playwright": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "@playwright/mcp",
+        "--browser",
+        "chrome"
+      ]
+    },
+    "devfleet": {
+      "type": "http",
+      "url": "http://localhost:18801/mcp"
+    },
+    "laraplugins": {
+      "type": "http",
+      "url": "https://laraplugins.io/mcp/plugins"
+    },
+    "squish": {
+      "command": "bunx",
+      "args": [
+        "-y",
+        "squish-memory"
+      ]
+    }
+  }
+}
