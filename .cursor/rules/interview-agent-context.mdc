@@ -1,0 +1,36 @@
+---
+description: InterviewAgent 项目架构与目录长期上下文（始终应用）
+alwaysApply: true
+---
+
+# InterviewAgent 项目记忆
+
+AI 模拟面试单体：Java 20 + Spring Boot 3.4 + Spring AI Alibaba（DashScope）+ StateGraph。  
+主交互 WebSocket `/ws` + `src/main/resources/static/` 前端；默认端口 9090。
+
+## 包目录（`com.interview.agent`）
+
+- `agent/` — Chat + JD/匹配/出题/面试官/评估/复习 Agent
+- `graph/` — StateGraph 编排、`AnswerBridge`、难度控制
+- `skill/` — 快速测验、知识讲解（优先于 Chat）
+- `rag/` — 内存 BM25 + 向量 + LLM 重排（题库优先）
+- `loader/` — JD/简历/题库解析
+- `handler/` — WebSocket 协议
+- `memory/` — 短期聊天；长期薄弱点 → MySQL
+- `auth/` `config/` `model/` `repository/` `web/`
+
+## 关键入口
+
+| 场景 | 文件 |
+|------|------|
+| WS 协议 | `handler/WebSocketHandler.java` |
+| 面试编排 | `graph/InterviewOrchestrator.java` |
+| 检索 | `rag/RagService.java` |
+| 配置 | `application.yml` + `.env.example` |
+
+## 硬约束
+
+- 题库命中原题不改写；默认不用 Milvus（内存题库，重启需重传）
+- 鉴权默认关（`AUTH_ENABLED=false`）；Redis 自动配置已排除
+- 改架构/目录/协议前：先更新 `docs/`，再改代码
+- 详细文档：`docs/architecture.md`、`docs/features/README.md`、`docs/tech.md`、根目录 `AGENTS.md`

@@ -1,0 +1,93 @@
+---
+description: 接口变更时必须输出前端修改文档到 docs/
+alwaysApply: true
+---
+
+# 接口变更前端文档规则
+
+## 何时触发
+
+涉及以下任一变更时，**在改代码的同一次交付中**必须新增或更新一份前端修改文档：
+
+- 新增 HTTP/WebSocket 接口（含新 `type` 消息）
+- 修改请求参数 / 入站字段
+- 修改响应结构 / 出站字段
+
+纯内部重构、不改变对外契约时可不写。
+
+## 文档落盘
+
+- 目录：`docs/`（可放在 `docs/` 根下，或 `docs/features/` 旁的独立文件）
+- 格式：Markdown
+- 文件名：小写字母 + 下划线，例如 `docs/customer_handover.md`、`docs/ws_start_interview.md`
+- 若已有同名文档：在原文件上增量更新，不要另起冲突文件名
+
+## 文档内容最低要求
+
+1. **API 说明**：路径或 WS `type`、方法、请求参数、响应格式  
+2. **涉及的前端页面/文件**：如 `static/index.html`、`static/js/app.js`  
+3. **具体修改代码示例**：按钮/弹窗、data、方法等可落地片段  
+
+须覆盖下方模板中的章节；本项目前端为原生 HTML/JS（非 Vue/Element），示例可按实际栈改写，但章节不可省略。
+
+## 文档模板
+
+```markdown
+# 功能名称
+
+## 涉及页面
+
+- 页面1（路径）
+- 页面2（路径）
+
+## API
+
+| 方法 | 路径 / WS type | 说明 |
+|------|----------------|------|
+| POST | /xxx/xxx | 说明 |
+| WS | type=xxx | 说明 |
+
+**请求参数：**
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| xxx | String | 是 | xxx |
+
+**响应：** `{ "code": 200, "msg": "操作成功" }`
+（WebSocket 可写 JSON 消息示例）
+
+## 前端修改点
+
+### 1. 按钮/弹窗/表格等
+
+```html
+<button id="btnXxx">xxx</button>
+```
+
+### 2. data 数据
+
+```js
+// 状态 / 字段
+let xxx = '';
+```
+
+### 3. 方法
+
+```js
+function handleXxx() {
+  // ...
+}
+```
+
+## 注意事项
+
+- 注意事项1
+- 注意事项2
+```
+
+## Agent 执行要求
+
+1. 先改后端契约，再写/更新 `docs/*.md`，再改前端（或在同一 PR 中三者齐全）。  
+2. 回复用户时写明文档路径，例如：`已输出前端修改文档：docs/ws_upload_questions.md`。  
+3. 同步核对 `docs/README.md` 或 `docs/features/README.md` 是否需要增加该文档链接。  
+4. 架构级协议变更时，同时更新 `docs/features/websocket-frontend.md` / `docs/tech.md` 中的协议摘要。

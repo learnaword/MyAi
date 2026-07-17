@@ -1,0 +1,54 @@
+# 功能：WebSocket 与前端
+
+<!-- AUTO-GENERATED: feature/websocket-frontend -->
+
+## 做什么
+
+提供浏览器 UI 与后端实时通道，承载聊天、题库上传、面试全流程。
+
+## 入口
+
+| 类型 | 路径 |
+|------|------|
+| 页面 | `http://host:9090/` → `static/index.html` |
+| WS | `ws://host:9090/ws` |
+| 配置 | `config/WebSocketConfig`（缓冲 32MB，空闲 10 分钟） |
+
+## 前端文件
+
+| 文件 | 职责 |
+|------|------|
+| `static/index.html` | 布局：JD/简历/题库 + 对话区 |
+| `static/js/app.js` | 连接 WS、消息收发、作答态切换 |
+| `static/css/app.css` | 样式 |
+
+## 客户端消息类型
+
+| type | 用途 |
+|------|------|
+| `chat` | 闲聊 / Skill |
+| `start_interview` | 开始面试 |
+| `answer` | 提交答案 |
+| `upload_questions` | 上传题库 |
+| `quit` | 结束面试 |
+
+## 服务端常见推送
+
+`system` / `chat` / `error` / `interview_started` / `phase` / `jd_analysis` / `match_report` / `question_plan` / `question` / `followup` / `grade` / `evaluation` / `review_plan` / `done` / `upload_result`
+
+## 关键类
+
+| 类 | 职责 |
+|----|------|
+| `handler/WebSocketHandler` | 协议路由与异步面试线程 |
+| `model/WsInboundMessage` / `WsOutboundMessage` | 消息模型 |
+
+## 前端作答态
+
+收到 `question` 或 `followup` 后，输入框下一条按 `answer` 发送；`done`/`quit`/`evaluation` 后回到聊天态。
+
+## 相关文档
+
+- [日常聊天与 Skill](./chat-and-skills.md)
+- [模拟面试](./mock-interview.md)
+- [题库上传与 RAG](./question-bank-rag.md)

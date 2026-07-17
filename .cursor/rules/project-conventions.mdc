@@ -1,0 +1,77 @@
+---
+description: Codex_Blog 项目开发约定与协作规范
+alwaysApply: true
+---
+
+# 项目开发约定
+
+## 概述
+
+本规则定义 Codex_Blog 的开发模式与协作约定。更详细的目录结构、模块划分见 `AGENTS.md`。
+
+## 技术栈
+
+- **语言**: Java（`pom.xml` 属性为 20；Maven compiler 当前为 1.8，本地编译可指定 JDK 20）
+- **架构**: Spring Boot 3 + Spring MVC 单体 WAR，JSP 渲染页面（非前后端分离）
+- **持久化**: MyBatis Plus / MyBatis Plus Join + MySQL
+- **缓存**: Redis / Redisson
+- **搜索**: Elasticsearch
+- **对象转换**: MapStruct（`convert` 包，编译期生成）
+- **权限**: Spring Security + Token + Redis
+- **测试位置**: `src/test/java`
+
+## 分层与包约定
+
+- 分层：`controller → service → dal`
+- 后台放 `admin`，前台放 `page`，REST API 放 `api`
+- VO 放对应 Controller 下的 `vo`/`dto` 包；DO 放 `dal/dataobject`；Mapper 放 `dal/mysql`
+- 通用返回用 `CommonResult`，分页用 `PageResult`；异常复用 `common/exception`
+- 业务逻辑下沉 Service，不在 Controller 堆复杂逻辑
+- 优先复用 `framework` 封装，不随意新建平行体系
+
+## 提交约定
+
+遵循约定式提交（Conventional Commits）：
+
+### 前缀
+
+- `feat` - 新功能
+- `fix` - 错误修复
+- `docs` - 文档变更
+- `test` - 测试添加或更新
+- `refactor` - 代码重构
+- `style` - 代码风格（格式化、分号等，不含逻辑变更）
+- `chore` - 构建、依赖、工具变更
+
+### 消息规范
+
+- 第一行简洁（建议 < 70 字符），使用祈使语气
+- 可带范围：`feat(blog): 添加博客 CRUD API`
+- 示例：`fix(search): 修复 ES 回表缺失简介字段`
+
+## 代码风格
+
+- 遵循 Java 命名约定；Service 接口 `XxxService`，实现 `XxxServiceImpl`
+- 依赖注入优先 `@Resource`
+- 变量和方法名语义清晰；方法保持单一职责
+- 注释只写非显而易见的业务逻辑，避免冗余 Javadoc
+- 最小改动原则：不顺手升级核心依赖、不批量重构 JSP/静态资源
+
+## 测试
+
+- 改动业务逻辑时至少执行 `mvn -DskipTests compile`
+- 新增或修改 Service 逻辑时，补充有意义的单元测试（放 `src/test/java`）
+- 涉及 MySQL、Redis、ES 的功能需结合本地环境手动验证
+- 不追求虚高覆盖率；优先覆盖核心路径与易错逻辑
+
+## 编译与文档
+
+- 跨层改动后执行编译检查，见 `java-compile-checks.mdc`
+- 接口变更（路径、参数、响应）须输出前端文档到 `docs/`，见 `frontend-docs.mdc`
+
+## 合并请求规范
+
+- 保持 PR 专注且小，一次解决一类问题
+- 新功能附带必要测试与编译验证
+- 接口变更同步 `docs/` 文档
+- 合并前自查：编译通过、无敏感信息误提交、未改动无关 `.idea` 文件
