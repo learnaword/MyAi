@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InterviewAgent</title>
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <div class="bg"></div>
+  <header class="top">
+    <div class="brand">InterviewAgent</div>
+    <div class="status" id="wsStatus">未连接</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel setup">
+      <h2>开始模拟面试</h2>
+      <label>岗位 JD 文本</label>
+      <textarea id="jdText" rows="5" placeholder="粘贴 JD 文本…"></textarea>
+      <label>或 JD 链接</label>
+      <input id="jdUrl" type="url" placeholder="https://..." />
+      <label>简历文本</label>
+      <textarea id="resumeText" rows="5" placeholder="粘贴简历，或上传 PDF/DOCX"></textarea>
+      <div class="row">
+        <input id="resumeFile" type="file" accept=".pdf,.docx,.txt,.md" />
+        <button id="btnStart" class="primary">开始面试</button>
+        <button id="btnQuit" class="ghost">结束面试</button>
+      </div>
+
+      <h2>题库上传</h2>
+      <div class="row">
+        <input id="bankFile" type="file" accept=".pdf,.docx,.txt,.md" />
+        <button id="btnUpload" class="ghost">上传题库</button>
+      </div>
+      <p class="hint">推荐本地格式（无需 LLM）：<br/>
+        题：…… / 答：…… 成对编写，或上传 JSON：[{"content":"题目","referenceAnswer":"答案"}]。<br/>
+        非标准格式才会调用 DashScope 解析。</p>
+    </section>
+
+    <section class="panel chat">
+      <h2>对话</h2>
+      <div id="messages" class="messages"></div>
+      <div class="composer">
+        <textarea id="input" rows="2" placeholder="聊天 / 回答面试题 / 「快速测验」「讲解 HashMap」…"></textarea>
+        <button id="btnSend" class="primary">发送</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

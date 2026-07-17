@@ -6,9 +6,9 @@ spring:
     name: interview-agent
 
   datasource:
-    url: ${MYSQL_URL}
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3306/interview_agent?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:interview}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
@@ -28,7 +28,7 @@ spring:
 
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${DASHSCOPE_API_KEY:}
       chat:
         options:
           model: ${LLM_MODEL:qwen-plus}
@@ -38,11 +38,18 @@ spring:
 
 app:
   milvus:
+    enabled: ${MILVUS_ENABLED:false}
     host: ${MILVUS_HOST:localhost}
     port: ${MILVUS_PORT:19530}
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:interview-agent-default-secret}
   auth:
-    enabled: ${AUTH_ENABLED:true}
+    enabled: ${AUTH_ENABLED:false}
   github:
     token: ${GITHUB_TOKEN:}
+  rag:
+    top-k: 8
+    rerank-top-n: 3
+  interview:
+    max-questions: ${INTERVIEW_MAX_QUESTIONS:5}
+    answer-timeout-seconds: ${INTERVIEW_ANSWER_TIMEOUT:300}
