@@ -134,11 +134,12 @@
     }
   };
 
+  // IME（中文等输入法）组字时：Enter 只确认拼音，不发送
   $('input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      $('btnSend').click();
-    }
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    if (e.isComposing || e.keyCode === 229) return;
+    e.preventDefault();
+    $('btnSend').click();
   });
 
   $('btnStart').onclick = async () => {
