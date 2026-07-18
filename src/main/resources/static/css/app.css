@@ -60,10 +60,24 @@ body { background: var(--paper); }
   font-size: 1.25rem; margin: 0.4rem 0 0.8rem;
 }
 label { display: block; font-size: 0.8rem; color: var(--muted); margin: 0.55rem 0 0.3rem; }
-textarea, input[type="url"], input[type="text"] {
-  width: 100%; border: 1px solid var(--line); border-radius: 12px;
-  padding: 0.7rem 0.8rem; background: #fffdf9; color: var(--ink);
-  font: inherit; resize: vertical;
+textarea,
+input[type="url"],
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input:not([type]) {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: #fffdf9;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  resize: vertical;
 }
 .row { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-top: 0.8rem; }
 .hint { color: var(--muted); font-size: 0.8rem; line-height: 1.45; }

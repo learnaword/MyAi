@@ -10,9 +10,13 @@
 
 | 类型 | 路径 |
 |------|------|
-| 页面 | `http://host:9090/` → `static/index.html` |
-| WS | `ws://host:9090/ws` |
+| 页面 | `http://host:9090/` → `static/index.html`（USER；未登录见登录页） |
+| 登录/注册 | `login.html` / `register.html`（见 [login API](../login/API设计.md)） |
+| 观测 | `obs.html`（ADMIN） |
+| WS | `ws://host:9090/ws?token=<jwt>`（`AUTH_ENABLED=true` 时必填；仅 **USER**） |
 | 配置 | `config/WebSocketConfig`（缓冲 32MB，空闲 10 分钟） |
+
+身份：握手解析 JWT，`userId` 写入会话；客户端不可伪造。缺/无效 token → 前端提示「用户未登录」；ADMIN 连 WS → 拒绝。
 
 ## 前端文件
 

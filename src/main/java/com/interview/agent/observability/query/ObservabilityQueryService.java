@@ -56,12 +56,12 @@ public class ObservabilityQueryService {
     }
 
     public Map<String, Object> listTraces(
-            Instant from, Instant to, String scene, String sessionId, String status, int page, int size) {
+            Instant from, Instant to, String scene, String sessionId, String status, Long userId, int page, int size) {
         validateRange(from, to);
         int pageSize = Math.min(Math.max(size, 1), 100);
         PageRequest pr = PageRequest.of(Math.max(page, 0), pageSize, Sort.by(Sort.Direction.DESC, "startedAt"));
         Page<AiTraceEntity> result = traceRepository.search(from, to, blankToNull(scene), blankToNull(sessionId),
-                blankToNull(status), pr);
+                blankToNull(status), userId, pr);
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("page", result.getNumber());
         body.put("size", result.getSize());
@@ -71,10 +71,10 @@ public class ObservabilityQueryService {
         return body;
     }
 
-    public Map<String, Object> tokenStats(Instant from, Instant to, String scene, String groupByRaw) {
+    public Map<String, Object> tokenStats(Instant from, Instant to, String scene, String groupByRaw, Long userId) {
         validateRange(from, to);
         Set<String> groupBy = parseGroupBy(groupByRaw, Set.of("agent", "model"));
-        List<AiSpanEntity> spans = spanRepository.findLlmSpans(from, to, blankToNull(scene));
+        List<AiSpanEntity> spans = spanRepository.findLlmSpans(from, to, blankToNull(scene), userId);
         Map<String, Agg> groups = new LinkedHashMap<>();
         for (AiSpanEntity s : spans) {
             String key = groupKey(groupBy, s, scene);
@@ -130,9 +130,9 @@ public class ObservabilityQueryService {
         return body;
     }
 
-    public Map<String, Object> ragStats(Instant from, Instant to, String scene) {
+    public Map<String, Object> ragStats(Instant from, Instant to, String scene, Long userId) {
         validateRange(from, to);
-        List<AiSpanEntity> spans = spanRepository.findRagSpans(from, to, blankToNull(scene));
+        List<AiSpanEntity> spans = spanRepository.findRagSpans(from, to, blankToNull(scene), userId);
         int retrieves = spans.size();
         long empty = spans.stream().filter(s -> Boolean.TRUE.equals(s.getRagEmpty())).count();
         long hit = spans.stream().filter(s -> Boolean.TRUE.equals(s.getRagHit())).count();
@@ -158,9 +158,9 @@ public class ObservabilityQueryService {
         return body;
     }
 
-    public Map<String, Object> toolStats(Instant from, Instant to, String toolName) {
+    public Map<String, Object> toolStats(Instant from, Instant to, String toolName, Long userId) {
         validateRange(from, to);
-        List<AiSpanEntity> spans = spanRepository.findToolSpans(from, to, blankToNull(toolName));
+        List<AiSpanEntity> spans = spanRepository.findToolSpans(from, to, blankToNull(toolName), userId);
         Map<String, List<AiSpanEntity>> byTool = spans.stream()
                 .collect(Collectors.groupingBy(s -> s.getToolName() == null ? "unknown" : s.getToolName(),
                         LinkedHashMap::new, Collectors.toList()));
@@ -187,9 +187,9 @@ public class ObservabilityQueryService {
         return body;
     }
 
-    public Map<String, Object> agentStats(Instant from, Instant to, String node, String agent) {
+    public Map<String, Object> agentStats(Instant from, Instant to, String node, String agent, Long userId) {
         validateRange(from, to);
-        List<AiSpanEntity> spans = spanRepository.findAgentSpans(from, to, blankToNull(node), blankToNull(agent));
+        List<AiSpanEntity> spans = spanRepository.findAgentSpans(from, to, blankToNull(node), blankToNull(agent), userId);
         Map<String, List<AiSpanEntity>> grouped = spans.stream()
                 .collect(Collectors.groupingBy(
                         s -> (s.getNode() == null ? "" : s.getNode()) + "|" + (s.getAgent() == null ? "" : s.getAgent()),
@@ -232,8 +232,8 @@ public class ObservabilityQueryService {
     }
 
     public boolean adminConfigured() {
-        String token = appConfig.getObservability().getAdminToken();
-        return token != null && !token.isBlank();
+        // Observability admin auth is ADMIN JWT (shared admin-token removed)
+        return true;
     }
 
     public void validateRange(Instant from, Instant to) {
@@ -254,6 +254,7 @@ public class ObservabilityQueryService {
         m.put("traceId", t.getTraceId());
         m.put("scene", t.getScene());
         m.put("sessionId", t.getSessionId());
+        m.put("userId", t.getUserId());
         m.put("status", t.getStatus());
         m.put("startedAt", t.getStartedAt());
         m.put("endedAt", t.getEndedAt());

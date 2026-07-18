@@ -43,8 +43,19 @@ app:
     port: ${MILVUS_PORT:19530}
   jwt:
     secret: ${JWT_SECRET:interview-agent-default-secret}
+    expiration: ${JWT_EXPIRATION_MS:604800000}
   auth:
-    enabled: ${AUTH_ENABLED:false}
+    enabled: ${AUTH_ENABLED:true}
+    bootstrap-admin-username: ${ADMIN_BOOTSTRAP_USERNAME:admin}
+    bootstrap-admin-password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+    bootstrap-admin-email: ${ADMIN_BOOTSTRAP_EMAIL:admin@localhost}
+    reset-code-pepper: ${AUTH_RESET_CODE_PEPPER:interview-agent-reset-pepper}
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:}
   github:
     token: ${GITHUB_TOKEN:}
   rag:
@@ -59,7 +70,6 @@ app:
     queue-capacity: 10000
     flush-batch-size: 100
     store-prompt: false
-    admin-token: ${OBS_ADMIN_TOKEN:}
     cost-currency: CNY
     default-model: ${LLM_MODEL:qwen-plus}
     attach-trace-id-types: "*"

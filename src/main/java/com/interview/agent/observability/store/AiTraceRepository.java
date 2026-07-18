@@ -33,6 +33,7 @@ public interface AiTraceRepository extends JpaRepository<AiTraceEntity, String> 
               AND (:scene IS NULL OR t.scene = :scene)
               AND (:sessionId IS NULL OR t.sessionId = :sessionId)
               AND (:status IS NULL OR t.status = :status)
+              AND (:userId IS NULL OR t.userId = :userId)
             """)
     Page<AiTraceEntity> search(
             @Param("from") Instant from,
@@ -40,6 +41,7 @@ public interface AiTraceRepository extends JpaRepository<AiTraceEntity, String> 
             @Param("scene") String scene,
             @Param("sessionId") String sessionId,
             @Param("status") String status,
+            @Param("userId") Long userId,
             Pageable pageable);
 
     @Modifying(clearAutomatically = true)

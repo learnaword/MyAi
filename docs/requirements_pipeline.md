@@ -31,16 +31,16 @@ docs/<name>/tasks_<name>.md
 
 ## 你可以点的名（任意顺序）
 
-| 你说 | Agent 只做 |
-|------|------------|
-| `做 PRD 分析。需求：……` | `docs/<name>/prd_<name>.md` |
-| `做技术方案` | `docs/<name>/tech_design_<name>.md` |
-| `做数据库设计` | `docs/<name>/db_design_<name>.md` |
-| `做 API 设计` | `docs/<name>/api_design_<name>.md` |
-| `拆 Task` / `任务拆分` | `docs/<name>/tasks_<name>.md` |
-| `对齐编码规范` | 规范核对/更新 |
-| `更新项目 Context` | AGENTS / rules / 索引 |
-| `开始编码` / `实现 xxx` | 写代码（需你明示） |
+| 你说 | Agent 只做               |
+|------|------------------------|
+| `做 PRD 分析。需求：……` | `docs/<name>/需求分析.md`  |
+| `做技术方案` | `docs/<name>/技术方案.md`  |
+| `做数据库设计` | `docs/<name>/数据库设计.md` |
+| `做 API 设计` | `docs/<name>/API设计.md` |
+| `拆 Task` / `任务拆分` | `docs/<name>/任务拆分.md`  |
+| `对齐编码规范` | 规范核对/更新                |
+| `更新项目 Context` | AGENTS / rules / 索引    |
+| `开始编码` / `实现 xxx` | 写代码（需你明示）              |
 
 ## 输出不对时
 

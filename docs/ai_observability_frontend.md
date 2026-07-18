@@ -132,4 +132,4 @@ function onWsMessage(msg) {
 - 求职者主站 **不要** 默认展示 span 明细或 Token 成本；观测台与主站分离。
 - Admin Token 只放在 `sessionStorage` / 本地输入，**禁止**提交进 git。
 - `traceId` 为可选字段，旧前端不解析也不应报错。
-- `AUTH_ENABLED` 与 `X-Obs-Admin-Token` 是两套机制；观测 API 以 Admin Token 为准。
+- 观测鉴权已改为**仅 ADMIN JWT**（去除 Admin Token）。管理员经登录页进入 `obs.html`。详见 [login_frontend.md](./login_frontend.md) 与 [login/API设计.md](./login/API设计.md)。

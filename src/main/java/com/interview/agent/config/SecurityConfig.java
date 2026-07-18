@@ -5,6 +5,7 @@ import com.interview.agent.observability.web.ObservabilityAdminFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -35,7 +36,6 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // Avoid Spring Boot default generated security password when JWT auth is used.
         return new InMemoryUserDetailsManager();
     }
 
@@ -56,10 +56,16 @@ public class SecurityConfig {
         if (appConfig.getAuth().isEnabled()) {
             http.authorizeHttpRequests(auth -> auth
                             .requestMatchers(
-                                    "/", "/index.html", "/obs.html", "/css/**", "/js/**", "/favicon.ico",
-                                    "/api/register", "/api/login", "/health", "/ws/**")
+                                    "/", "/index.html", "/obs.html",
+                                    "/login.html", "/register.html",
+                                    "/forgot-password.html", "/change-password.html",
+                                    "/css/**", "/js/**", "/favicon.ico",
+                                    "/api/register", "/api/login",
+                                    "/api/password/forgot/**",
+                                    "/health", "/ws/**")
                             .permitAll()
                             .requestMatchers("/api/observability/**").permitAll()
+                            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                             .anyRequest().authenticated())
                     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         } else {

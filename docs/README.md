@@ -22,6 +22,8 @@
 | [features/](./features/) | **按功能拆分的技术文档**（见下表） |
 | [ai_full_link_analysis/](./ai_full_link_analysis/) | AI 全链路可观测（PRD / 技术方案 / 库表 / API） |
 | [ai_observability_frontend.md](./ai_observability_frontend.md) | 可观测 REST + 可选 `traceId` 的前端修改说明 |
+| [login/](./login/) | 登录 / 注册 / 角色分流（需求分析 · 技术方案 · API） |
+| [login_frontend.md](./login_frontend.md) | 登录页、角色门控、WS token、观测 JWT 前端修改说明 |
 
 ## 功能文档
 
@@ -38,6 +40,6 @@
 | 记忆系统 | [features/memory.md](./features/memory.md) |
 | 面试会话编排与持久化 | [features/session-and-orchestration.md](./features/session-and-orchestration.md) |
 | WebSocket 与前端 | [features/websocket-frontend.md](./features/websocket-frontend.md) |
-| 鉴权（JWT，可选） | [features/auth.md](./features/auth.md) |
+| 鉴权（JWT，可选） | [features/auth.md](./features/auth.md)（角色分流详见 [login/](./login/)） |
 
 代码/架构变更后请同步更新 `docs/`，并核对 `AGENTS.md` 与 `.cursor/rules/interview-agent-context.mdc`。

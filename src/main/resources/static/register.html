@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>注册 · InterviewAgent</title>
+  <link rel="stylesheet" href="/css/app.css?v=3" />
+  <link rel="stylesheet" href="/css/auth.css?v=3" />
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="auth-wrap">
+    <form class="auth-card" id="registerForm">
+      <h1>注册</h1>
+      <p class="sub">创建求职者账号，注册成功后进入面试界面</p>
+      <label for="username">用户名</label>
+      <input class="auth-input" id="username" type="text" required autocomplete="username" />
+      <label for="email">邮箱</label>
+      <input class="auth-input" id="email" type="email" required autocomplete="email" />
+      <label for="password">密码（至少 8 位，含字母和数字）</label>
+      <input class="auth-input" id="password" type="password" required autocomplete="new-password" />
+      <label for="password2">确认密码</label>
+      <input class="auth-input" id="password2" type="password" required autocomplete="new-password" />
+      <p class="auth-error" id="err" role="alert"></p>
+      <div class="actions">
+        <button type="submit" class="primary">注册并进入</button>
+      </div>
+      <div class="links"><a href="/login.html">已有账号？去登录</a></div>
+    </form>
+  </div>
+  <script src="/js/auth.js"></script>
+  <script>
+    (() => {
+      const { saveAuth, redirectByRole, parseError } = window.IAAuth;
+      const err = document.getElementById('err');
+      document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        err.textContent = '';
+        const password = document.getElementById('password').value;
+        const password2 = document.getElementById('password2').value;
+        if (password !== password2) {
+          err.textContent = '两次密码不一致';
+          return;
+        }
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password
+          })
+        });
+        if (!res.ok) {
+          err.textContent = await parseError(res);
+          return;
+        }
+        const body = await res.json();
+        saveAuth(body);
+        redirectByRole(body.role || 'USER');
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,4 +1,3 @@
-
 package com.interview.agent.config;
 
 import lombok.Data;
@@ -17,6 +16,7 @@ public class AppConfig {
     private JwtProperties jwt = new JwtProperties();
     private GitHubProperties github = new GitHubProperties();
     private AuthProperties auth = new AuthProperties();
+    private MailProperties mail = new MailProperties();
     private RagProperties rag = new RagProperties();
     private InterviewProperties interview = new InterviewProperties();
     private ObservabilityProperties observability = new ObservabilityProperties();
@@ -43,7 +43,8 @@ public class AppConfig {
     @Data
     public static class JwtProperties {
         private String secret = "interview-agent-default-secret";
-        private long expiration = 86400000; // 24 hours
+        /** 7 days */
+        private long expiration = 604_800_000L;
     }
 
     @Data
@@ -53,7 +54,20 @@ public class AppConfig {
 
     @Data
     public static class AuthProperties {
-        private boolean enabled = false;
+        private boolean enabled = true;
+        private String bootstrapAdminUsername = "admin";
+        private String bootstrapAdminPassword = "";
+        private String bootstrapAdminEmail = "admin@localhost";
+        private String resetCodePepper = "interview-agent-reset-pepper";
+    }
+
+    @Data
+    public static class MailProperties {
+        private String host = "";
+        private Integer port = 587;
+        private String username = "";
+        private String password = "";
+        private String from = "";
     }
 
     @Data
@@ -63,10 +77,10 @@ public class AppConfig {
         private int queueCapacity = 10000;
         private int flushBatchSize = 100;
         private boolean storePrompt = false;
+        /** @deprecated removed; kept for binding ignore if present in old env */
         private String adminToken = "";
         private String costCurrency = "CNY";
         private String defaultModel = "qwen-plus";
-        /** WS types that attach traceId; use * for all outbound types */
         private String attachTraceIdTypes = "*";
         private Map<String, ModelPricing> pricing = defaultPricing();
 

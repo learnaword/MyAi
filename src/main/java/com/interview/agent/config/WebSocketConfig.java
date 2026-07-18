@@ -1,7 +1,3 @@
-/**
- * @author: 公众号：IT杨秀才
- * @doc: AI模拟面试官 - Java版（Spring AI Alibaba）
- */
 package com.interview.agent.config;
 
 import com.interview.agent.handler.WebSocketHandler;
@@ -19,21 +15,15 @@ import org.springframework.web.socket.server.standard.ServletServerContainerFact
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final WebSocketHandler webSocketHandler;
+    private final WsJwtHandshakeInterceptor wsJwtHandshakeInterceptor;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(webSocketHandler, "/ws")
+                .addInterceptors(wsJwtHandshakeInterceptor)
                 .setAllowedOrigins("*");
     }
 
-    /**
-     * 放大 WebSocket 消息缓冲区与空闲超时。
-     *
-     * <p>题库文件（MD/PDF/TXT）经 base64 编码后通过 WebSocket 的 upload_questions 消息上传，
-     * 体积常达几百 KB 到数 MB，而 Spring/Tomcat 默认单条文本消息上限仅 8KB——超限会导致后端
-     * 直接关闭连接，前端表现为上传失败、控制台刷 EPIPE。这里放大到 32MB 以支持大题库上传，
-     * 同时把空闲超时设为 10 分钟，避免面试长连接在等待用户作答时被断开。
-     */
     @Bean
     public ServletServerContainerFactoryBean createWebSocketContainer() {
         ServletServerContainerFactoryBean container = new ServletServerContainerFactoryBean();

@@ -17,12 +17,14 @@ public class JwtService {
 
     private final AppConfig appConfig;
 
-    public String generateToken(Long userId, String username) {
+    public String generateToken(Long userId, String username, String role, int passwordVersion) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + appConfig.getJwt().getExpiration());
         return Jwts.builder()
                 .subject(username)
                 .claim("uid", userId)
+                .claim("role", role)
+                .claim("pv", passwordVersion)
                 .issuedAt(now)
                 .expiration(exp)
                 .signWith(key())
@@ -35,6 +37,27 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public Long userId(Claims claims) {
+        Object uid = claims.get("uid");
+        if (uid instanceof Number n) {
+            return n.longValue();
+        }
+        return uid == null ? null : Long.parseLong(uid.toString());
+    }
+
+    public String role(Claims claims) {
+        Object role = claims.get("role");
+        return role == null ? UserRole.USER.name() : role.toString();
+    }
+
+    public int passwordVersion(Claims claims) {
+        Object pv = claims.get("pv");
+        if (pv instanceof Number n) {
+            return n.intValue();
+        }
+        return pv == null ? 0 : Integer.parseInt(pv.toString());
     }
 
     private SecretKey key() {

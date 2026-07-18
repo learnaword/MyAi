@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.interview.agent.agent.ChatAgent;
 import com.interview.agent.config.AppConfig;
 import com.interview.agent.config.LlmErrorMessages;
+import com.interview.agent.config.WsJwtHandshakeInterceptor;
 import com.interview.agent.graph.InterviewOrchestrator;
 import com.interview.agent.graph.InterviewStateKeys;
 import com.interview.agent.loader.JdLoader;
@@ -91,10 +92,11 @@ public class WebSocketHandler extends TextWebSocketHandler {
             send(session, withTrace(WsOutboundMessage.error("聊天内容不能为空")));
             return;
         }
+        Long userId = currentUserId(session);
         ObsScene scene = ObsScene.CHAT;
-        AiTraceScope scope = traceContext.openRootNamed(scene, "chat", session.getId(), null, null);
+        AiTraceScope scope = traceContext.openRootNamed(scene, "chat", session.getId(), null, userId);
         try {
-            String key = session.getId();
+            String key = memoryKey(session);
             var skillReply = skillRouter.route(key, content);
             String reply;
             if (skillReply.isPresent()) {
@@ -152,12 +154,14 @@ public class WebSocketHandler extends TextWebSocketHandler {
         String interviewSessionId = UUID.randomUUID().toString().replace("-", "");
         activeInterviewByWs.put(session.getId(), interviewSessionId);
 
+        Long userId = currentUserId(session);
         AiTraceScope scope = traceContext.openRootNamed(
-                ObsScene.INTERVIEW, "start_interview", session.getId(), interviewSessionId, null);
+                ObsScene.INTERVIEW, "start_interview", session.getId(), interviewSessionId, userId);
         String traceId = scope == null ? null : scope.getTraceId();
 
         InterviewSessionEntity entity = InterviewSessionEntity.builder()
                 .id(interviewSessionId)
+                .userId(userId)
                 .status("RUNNING")
                 .jdText(jdText)
                 .resumeText(resumeText)
@@ -189,7 +193,7 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 if (interviewScope != null) {
                     traceContext.bind(interviewScope);
                 }
-                var state = interviewOrchestrator.run(interviewSessionId, null, jdText, resumeText);
+                var state = interviewOrchestrator.run(interviewSessionId, userId, jdText, resumeText);
                 entity.setStatus("FINISHED");
                 entity.setFinishedAt(Instant.now());
                 Object evaluation = state.value(InterviewStateKeys.EVALUATION, null);
@@ -259,7 +263,8 @@ public class WebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleUploadQuestions(WebSocketSession session, WsInboundMessage inbound) {
-        AiTraceScope scope = traceContext.openRootNamed(ObsScene.UPLOAD, "upload_questions", session.getId(), null, null);
+        AiTraceScope scope = traceContext.openRootNamed(
+                ObsScene.UPLOAD, "upload_questions", session.getId(), null, currentUserId(session));
         try {
             List<Question> questions = questionBankLoader.loadFromBase64(
                     inbound.getFilename(), inbound.getFileBase64());
@@ -343,6 +348,25 @@ public class WebSocketHandler extends TextWebSocketHandler {
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toSet());
         return allowed.contains(type);
+    }
+
+    private Long currentUserId(WebSocketSession session) {
+        Object raw = session.getAttributes().get(WsJwtHandshakeInterceptor.ATTR_USER_ID);
+        if (raw instanceof Long l) {
+            return l;
+        }
+        if (raw instanceof Number n) {
+            return n.longValue();
+        }
+        return null;
+    }
+
+    private String memoryKey(WebSocketSession session) {
+        Long userId = currentUserId(session);
+        if (userId != null) {
+            return "user:" + userId;
+        }
+        return session.getId();
     }
 
     private void send(WebSocketSession session, WsOutboundMessage payload) {

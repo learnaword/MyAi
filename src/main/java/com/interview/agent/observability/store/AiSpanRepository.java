@@ -22,11 +22,14 @@ public interface AiSpanRepository extends JpaRepository<AiSpanEntity, String> {
               AND s.startedAt >= :from AND s.startedAt < :to
               AND (:scene IS NULL OR EXISTS (
                    SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.scene = :scene))
+              AND (:userId IS NULL OR EXISTS (
+                   SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.userId = :userId))
             """)
     List<AiSpanEntity> findLlmSpans(
             @Param("from") Instant from,
             @Param("to") Instant to,
-            @Param("scene") String scene);
+            @Param("scene") String scene,
+            @Param("userId") Long userId);
 
     @Query("""
             SELECT s FROM AiSpanEntity s
@@ -34,22 +37,28 @@ public interface AiSpanRepository extends JpaRepository<AiSpanEntity, String> {
               AND s.startedAt >= :from AND s.startedAt < :to
               AND (:scene IS NULL OR EXISTS (
                    SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.scene = :scene))
+              AND (:userId IS NULL OR EXISTS (
+                   SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.userId = :userId))
             """)
     List<AiSpanEntity> findRagSpans(
             @Param("from") Instant from,
             @Param("to") Instant to,
-            @Param("scene") String scene);
+            @Param("scene") String scene,
+            @Param("userId") Long userId);
 
     @Query("""
             SELECT s FROM AiSpanEntity s
             WHERE s.spanType = 'TOOL'
               AND s.startedAt >= :from AND s.startedAt < :to
               AND (:toolName IS NULL OR s.toolName = :toolName)
+              AND (:userId IS NULL OR EXISTS (
+                   SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.userId = :userId))
             """)
     List<AiSpanEntity> findToolSpans(
             @Param("from") Instant from,
             @Param("to") Instant to,
-            @Param("toolName") String toolName);
+            @Param("toolName") String toolName,
+            @Param("userId") Long userId);
 
     @Query("""
             SELECT s FROM AiSpanEntity s
@@ -57,10 +66,13 @@ public interface AiSpanRepository extends JpaRepository<AiSpanEntity, String> {
               AND s.startedAt >= :from AND s.startedAt < :to
               AND (:node IS NULL OR s.node = :node)
               AND (:agent IS NULL OR s.agent = :agent)
+              AND (:userId IS NULL OR EXISTS (
+                   SELECT 1 FROM AiTraceEntity t WHERE t.traceId = s.traceId AND t.userId = :userId))
             """)
     List<AiSpanEntity> findAgentSpans(
             @Param("from") Instant from,
             @Param("to") Instant to,
             @Param("node") String node,
-            @Param("agent") String agent);
+            @Param("agent") String agent,
+            @Param("userId") Long userId);
 }

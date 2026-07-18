@@ -1,13 +1,11 @@
 package com.interview.agent.auth;
 
 import com.interview.agent.model.entity.UserEntity;
-import com.interview.agent.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -16,41 +14,96 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final AuthService authService;
 
     @PostMapping("/register")
-    public Map<String, Object> register(@RequestBody AuthRequest req) {
-        if (req.getUsername() == null || req.getPassword() == null
-                || req.getUsername().isBlank() || req.getPassword().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "username/password required");
-        }
-        if (userRepository.existsByUsername(req.getUsername())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "username exists");
-        }
-        UserEntity user = userRepository.save(UserEntity.builder()
-                .username(req.getUsername().trim())
-                .passwordHash(passwordEncoder.encode(req.getPassword()))
-                .build());
-        String token = jwtService.generateToken(user.getId(), user.getUsername());
-        return Map.of("token", token, "userId", user.getId(), "username", user.getUsername());
+    public Map<String, Object> register(@RequestBody RegisterRequest req) {
+        return authService.register(req.getUsername(), req.getEmail(), req.getPassword());
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody AuthRequest req) {
-        UserEntity user = userRepository.findByUsername(req.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "bad credentials"));
-        if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "bad credentials");
+    public Map<String, Object> login(@RequestBody LoginRequest req, HttpServletRequest request) {
+        String clientKey = request.getRemoteAddr();
+        return authService.login(req.getUsername(), req.getPassword(), clientKey);
+    }
+
+    @GetMapping("/me")
+    public Map<String, Object> me(Authentication authentication) {
+        return authService.me(currentUser(authentication));
+    }
+
+    @PostMapping("/me/bind-email")
+    public Map<String, Object> bindEmail(Authentication authentication, @RequestBody BindEmailRequest req) {
+        return authService.bindEmail(currentUser(authentication), req.getEmail());
+    }
+
+    @PostMapping("/password/change")
+    public Map<String, Object> changePassword(Authentication authentication, @RequestBody ChangePasswordRequest req) {
+        authService.changePassword(currentUser(authentication), req.getOldPassword(), req.getNewPassword());
+        return Map.of("ok", true);
+    }
+
+    @PostMapping("/password/forgot/send-code")
+    public Map<String, Object> sendResetCode(@RequestBody ForgotSendRequest req) {
+        authService.sendResetCode(req.getEmail());
+        return Map.of("ok", true);
+    }
+
+    @PostMapping("/password/forgot/reset")
+    public Map<String, Object> resetPassword(@RequestBody ForgotResetRequest req) {
+        authService.resetPassword(req.getEmail(), req.getCode(), req.getNewPassword());
+        return Map.of("ok", true);
+    }
+
+    @PostMapping("/admin/users")
+    public Map<String, Object> createAdmin(Authentication authentication, @RequestBody RegisterRequest req) {
+        UserEntity actor = currentUser(authentication);
+        if (!UserRole.ADMIN.name().equals(actor.getRole())) {
+            throw AuthException.forbidden("admin only");
         }
-        String token = jwtService.generateToken(user.getId(), user.getUsername());
-        return Map.of("token", token, "userId", user.getId(), "username", user.getUsername());
+        return authService.createAdmin(req.getUsername(), req.getEmail(), req.getPassword());
+    }
+
+    private UserEntity currentUser(Authentication authentication) {
+        if (authentication == null || !(authentication.getDetails() instanceof AuthPrincipal principal)) {
+            throw AuthException.unauthorized("UNAUTHORIZED", "login required");
+        }
+        return authService.requireUser(principal.getUserId());
     }
 
     @Data
-    public static class AuthRequest {
+    public static class RegisterRequest {
+        private String username;
+        private String email;
+        private String password;
+    }
+
+    @Data
+    public static class LoginRequest {
         private String username;
         private String password;
+    }
+
+    @Data
+    public static class BindEmailRequest {
+        private String email;
+    }
+
+    @Data
+    public static class ChangePasswordRequest {
+        private String oldPassword;
+        private String newPassword;
+    }
+
+    @Data
+    public static class ForgotSendRequest {
+        private String email;
+    }
+
+    @Data
+    public static class ForgotResetRequest {
+        private String email;
+        private String code;
+        private String newPassword;
     }
 }

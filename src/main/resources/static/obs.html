@@ -32,7 +32,7 @@
       color: var(--text);
       border-radius: 8px;
       padding: 8px 10px;
-      min-width: 180px;
+      min-width: 160px;
     }
     button {
       background: var(--accent);
@@ -43,6 +43,7 @@
       font-weight: 600;
       cursor: pointer;
     }
+    button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); }
     button:hover { filter: brightness(1.08); }
     pre, table {
       background: var(--panel);
@@ -61,18 +62,27 @@
     th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; font-size: 13px; }
     th { color: var(--muted); font-weight: 600; }
     .err { color: #ff8e8e; margin-top: 8px; white-space: pre-wrap; }
+    .head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
   </style>
 </head>
 <body>
-  <h1>AI Observability</h1>
-  <p>研发向全链路查询台。Token 仅保存在本机 sessionStorage，不会写入仓库。</p>
+  <div class="head">
+    <div>
+      <h1>AI Observability</h1>
+      <p>管理员观测台 · 使用登录 JWT，按 userId 可筛选链路</p>
+    </div>
+    <div class="row" style="margin:0">
+      <span id="adminUser" style="color:var(--muted);align-self:center"></span>
+      <button type="button" class="ghost" id="btnLogout">登出</button>
+    </div>
+  </div>
 
   <div class="row">
-    <label>Admin Token
-      <input id="obsToken" type="password" autocomplete="off" placeholder="OBS_ADMIN_TOKEN" />
-    </label>
     <label>TraceId
       <input id="traceIdInput" placeholder="paste traceId" />
+    </label>
+    <label>UserId（可选）
+      <input id="userIdInput" type="number" placeholder="filter userId" />
     </label>
     <button id="btnLoadTrace" type="button">加载链路</button>
   </div>
@@ -88,6 +98,19 @@
     <button id="btnStatus" type="button">模块状态</button>
   </div>
 
+  <div class="row">
+    <label>新建管理员用户名
+      <input id="adminUsername" />
+    </label>
+    <label>邮箱
+      <input id="adminEmail" type="email" />
+    </label>
+    <label>密码
+      <input id="adminPassword" type="password" />
+    </label>
+    <button id="btnCreateAdmin" type="button" class="ghost">创建管理员</button>
+  </div>
+
   <div id="err" class="err"></div>
   <pre id="traceView">{}</pre>
   <table id="statsTable">
@@ -95,6 +118,7 @@
     <tbody></tbody>
   </table>
 
+  <script src="/js/auth.js"></script>
   <script src="/js/obs.js"></script>
 </body>
 </html>

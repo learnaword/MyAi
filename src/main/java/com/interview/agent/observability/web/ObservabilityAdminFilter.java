@@ -1,12 +1,18 @@
 package com.interview.agent.observability.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.interview.agent.auth.JwtService;
+import com.interview.agent.auth.UserRole;
 import com.interview.agent.config.AppConfig;
+import com.interview.agent.model.entity.UserEntity;
+import com.interview.agent.repository.UserRepository;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -18,19 +24,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ObservabilityAdminFilter extends OncePerRequestFilter {
 
-    public static final String HEADER = "X-Obs-Admin-Token";
-
     private final AppConfig appConfig;
     private final ObjectMapper objectMapper;
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        if (path == null || !path.startsWith("/api/observability/")) {
-            return true;
-        }
-        // 已决议：/status 允许无 Token 探活（仍受 enabled 开关约束，在 doFilter 内处理）
-        return false;
+        return path == null || !path.startsWith("/api/observability/");
     }
 
     @Override
@@ -48,13 +50,32 @@ public class ObservabilityAdminFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String configured = appConfig.getObservability().getAdminToken();
-        if (configured == null || configured.isBlank()) {
-            write(response, 503, "OBS_ADMIN_NOT_CONFIGURED", "OBS_ADMIN_TOKEN is not configured");
+
+        String header = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (header == null || !header.startsWith("Bearer ")) {
+            write(response, 401, "UNAUTHORIZED", "admin jwt required");
             return;
         }
-        String provided = request.getHeader(HEADER);
-        if (provided == null || !configured.equals(provided)) {
+        try {
+            Claims claims = jwtService.parse(header.substring(7));
+            String role = jwtService.role(claims);
+            if (!UserRole.ADMIN.name().equals(role)) {
+                write(response, 403, "FORBIDDEN", "admin role required");
+                return;
+            }
+            Long userId = jwtService.userId(claims);
+            int pv = jwtService.passwordVersion(claims);
+            UserEntity user = userRepository.findById(userId).orElse(null);
+            if (user == null) {
+                write(response, 401, "UNAUTHORIZED", "invalid admin token");
+                return;
+            }
+            int currentPv = user.getPasswordVersion() == null ? 0 : user.getPasswordVersion();
+            if (currentPv != pv || !UserRole.ADMIN.name().equals(user.getRole())) {
+                write(response, 401, "UNAUTHORIZED", "invalid admin token");
+                return;
+            }
+        } catch (Exception e) {
             write(response, 401, "UNAUTHORIZED", "invalid admin token");
             return;
         }

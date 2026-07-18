@@ -1,22 +1,25 @@
 (function () {
-  const tokenInput = document.getElementById('obsToken');
+  if (!window.IAAuth || !window.IAAuth.guardPage('ADMIN')) {
+    return;
+  }
+
+  const { getToken, getUsername, authHeaders, parseError, logout } = window.IAAuth;
+  document.getElementById('adminUser').textContent = getUsername() || 'ADMIN';
+  document.getElementById('btnLogout').onclick = () => logout();
+
   const traceInput = document.getElementById('traceIdInput');
+  const userIdInput = document.getElementById('userIdInput');
   const fromInput = document.getElementById('fromInput');
   const toInput = document.getElementById('toInput');
   const traceView = document.getElementById('traceView');
   const statsBody = document.querySelector('#statsTable tbody');
   const errEl = document.getElementById('err');
 
-  let obsToken = sessionStorage.getItem('obsAdminToken') || '';
-  tokenInput.value = obsToken;
-
-  tokenInput.addEventListener('change', () => {
-    obsToken = tokenInput.value.trim();
-    sessionStorage.setItem('obsAdminToken', obsToken);
-  });
-
   function headers() {
-    return { 'X-Obs-Admin-Token': obsToken || tokenInput.value.trim() };
+    return {
+      Accept: 'application/json',
+      Authorization: 'Bearer ' + getToken()
+    };
   }
 
   function showErr(e) {
@@ -32,6 +35,11 @@
     const d = new Date(localValue);
     if (Number.isNaN(d.getTime())) throw new Error('时间格式无效');
     return d.toISOString();
+  }
+
+  function userIdQuery() {
+    const v = userIdInput.value.trim();
+    return v ? '&userId=' + encodeURIComponent(v) : '';
   }
 
   async function fetchJson(url) {
@@ -63,6 +71,8 @@
       const from = toIso(fromInput.value);
       const to = toIso(toInput.value);
       const q = new URLSearchParams({ from, to });
+      const uid = userIdInput.value.trim();
+      if (uid) q.set('userId', uid);
       const [tokens, rag, tools, agents] = await Promise.all([
         fetchJson('/api/observability/stats/tokens?' + q),
         fetchJson('/api/observability/stats/rag?' + q),
@@ -95,7 +105,26 @@
     }
   });
 
-  // default last 24h
+  document.getElementById('btnCreateAdmin').addEventListener('click', async () => {
+    clearErr();
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: authHeaders(true),
+        body: JSON.stringify({
+          username: document.getElementById('adminUsername').value.trim(),
+          email: document.getElementById('adminEmail').value.trim(),
+          password: document.getElementById('adminPassword').value
+        })
+      });
+      if (!res.ok) throw new Error(await parseError(res));
+      const body = await res.json();
+      traceView.textContent = JSON.stringify(body, null, 2);
+    } catch (e) {
+      showErr(e);
+    }
+  });
+
   const now = new Date();
   const from = new Date(now.getTime() - 24 * 3600 * 1000);
   const pad = (n) => String(n).padStart(2, '0');

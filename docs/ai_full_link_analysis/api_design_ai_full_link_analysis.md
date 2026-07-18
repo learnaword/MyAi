@@ -21,14 +21,15 @@
 
 ## 2. 鉴权
 
+> **增量（登录功能，已拍板）：** 观测鉴权**仅** ADMIN JWT；**去除** `X-Obs-Admin-Token` / `OBS_ADMIN_TOKEN`。详见 [login/API设计.md](../login/API设计.md) §2.3。
+
 | 项 | 约定 |
 |----|------|
-| 开关 | `app.observability.enabled=true` 且配置了 `app.observability.admin-token`（环境变量 `OBS_ADMIN_TOKEN`）时，查询 API 可用 |
-| 凭证 | 请求头 `X-Obs-Admin-Token: <token>` |
-| 未配置 token | 所有 `/api/observability/**` 返回 `503`（观测查询未开放） |
-| token 错误 | `401` |
-| 与 JWT 关系 | MVP **不复用** JWT 角色；`AUTH_ENABLED` 开关不影响本头（Security 白名单或独立过滤器校验该前缀） |
-| 求职者 WS | 不要求该头 |
+| 开关 | `app.observability.enabled=true` |
+| 凭证 | `Authorization: Bearer <jwt>`，且 JWT `role=ADMIN`（含 `pv` 校验） |
+| 无效/缺失 | `401` `UNAUTHORIZED` |
+| USER JWT | `403` `FORBIDDEN` |
+| 求职者 WS | 使用 USER JWT（见 login API），不用观测头 |
 
 错误 body 统一：
 
@@ -172,6 +173,7 @@
 | to | String (ISO-8601) | 是 | 结束时间（不含） |
 | scene | String | 否 | `CHAT` / `SKILL` / `INTERVIEW` / `UPLOAD` / `OTHER` |
 | sessionId | String | 否 | 面试会话 id |
+| userId | Long | 否 | 按 `ai_trace.user_id` 精确筛选（登录功能增量） |
 | status | String | 否 | `RUNNING` / `OK` / `ERROR` / `CANCELLED` |
 | page | int | 否 | 从 0 起，默认 0 |
 | size | int | 否 | 默认 20，最大 100 |

@@ -37,9 +37,10 @@ public class ObservabilityController {
             @RequestParam(required = false) String scene,
             @RequestParam(required = false) String sessionId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return queryService.listTraces(from, to, scene, sessionId, status, page, size);
+        return queryService.listTraces(from, to, scene, sessionId, status, userId, page, size);
     }
 
     @GetMapping("/stats/tokens")
@@ -47,24 +48,27 @@ public class ObservabilityController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) String scene,
-            @RequestParam(required = false) String groupBy) {
-        return queryService.tokenStats(from, to, scene, groupBy);
+            @RequestParam(required = false) String groupBy,
+            @RequestParam(required = false) Long userId) {
+        return queryService.tokenStats(from, to, scene, groupBy, userId);
     }
 
     @GetMapping("/stats/rag")
     public Map<String, Object> ragStats(
             @RequestParam Instant from,
             @RequestParam Instant to,
-            @RequestParam(required = false) String scene) {
-        return queryService.ragStats(from, to, scene);
+            @RequestParam(required = false) String scene,
+            @RequestParam(required = false) Long userId) {
+        return queryService.ragStats(from, to, scene, userId);
     }
 
     @GetMapping("/stats/tools")
     public Map<String, Object> toolStats(
             @RequestParam Instant from,
             @RequestParam Instant to,
-            @RequestParam(required = false) String toolName) {
-        return queryService.toolStats(from, to, toolName);
+            @RequestParam(required = false) String toolName,
+            @RequestParam(required = false) Long userId) {
+        return queryService.toolStats(from, to, toolName, userId);
     }
 
     @GetMapping("/stats/agents")
@@ -72,8 +76,9 @@ public class ObservabilityController {
             @RequestParam Instant from,
             @RequestParam Instant to,
             @RequestParam(required = false) String node,
-            @RequestParam(required = false) String agent) {
-        return queryService.agentStats(from, to, node, agent);
+            @RequestParam(required = false) String agent,
+            @RequestParam(required = false) Long userId) {
+        return queryService.agentStats(from, to, node, agent, userId);
     }
 
     @GetMapping("/status")

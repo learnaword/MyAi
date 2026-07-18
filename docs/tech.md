@@ -69,8 +69,10 @@ make run
 | `DASHSCOPE_READ_TIMEOUT` | No | `300` | Jetty 总超时（秒） |
 | `SERVER_PORT` | No | `9090` | 端口 |
 | `MYSQL_URL` / `USERNAME` / `PASSWORD` | No | 本地默认 | MySQL |
-| `AUTH_ENABLED` | No | `false` | 是否强制 JWT |
+| `AUTH_ENABLED` | No | `true` | 是否强制 JWT；管理员种子见 `ADMIN_BOOTSTRAP_*` |
 | `JWT_SECRET` | 鉴权开启时建议改 | 内置默认 | JWT 密钥 |
+| `ADMIN_BOOTSTRAP_PASSWORD` | 建议本地设置 | 空则跳过 | 启动创建管理员 |
+| `MAIL_HOST` / `MAIL_FROM` | 找回密码时 | 空 | SMTP；未配则发码 503 |
 | `INTERVIEW_MAX_QUESTIONS` | No | `5` | 题量 |
 | `INTERVIEW_ANSWER_TIMEOUT` | No | `300` | 作答等待秒数 |
 | `MILVUS_ENABLED` | No | `false` | 是否用 Milvus |
