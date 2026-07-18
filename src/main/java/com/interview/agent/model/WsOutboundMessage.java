@@ -7,7 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -17,6 +17,8 @@ public class WsOutboundMessage {
     private Object data;
     private String sessionId;
     private String error;
+    /** Optional AI observability correlation id */
+    private String traceId;
 
     public static WsOutboundMessage of(String type, String content) {
         return WsOutboundMessage.builder().type(type).content(content).build();

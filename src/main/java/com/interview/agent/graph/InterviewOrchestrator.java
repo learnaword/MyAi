@@ -22,7 +22,10 @@ import com.interview.agent.model.InterviewTurn;
 import com.interview.agent.model.JdRequirement;
 import com.interview.agent.model.MatchReport;
 import com.interview.agent.model.Question;
+import com.interview.agent.model.QuestionSource;
 import com.interview.agent.model.ReviewPlan;
+import com.interview.agent.observability.AiTraceContext;
+import com.interview.agent.observability.SpanType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -31,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.cloud.ai.graph.StateGraph.END;
@@ -52,6 +56,7 @@ public class InterviewOrchestrator {
     private final DifficultyController difficultyController;
     private final LongTermMemoryService longTermMemoryService;
     private final AppConfig appConfig;
+    private final AiTraceContext traceContext;
 
     private final Map<String, InterviewEventSink> sinks = new ConcurrentHashMap<>();
     private final Map<String, Boolean> quitFlags = new ConcurrentHashMap<>();
@@ -119,14 +124,20 @@ public class InterviewOrchestrator {
 
         StateGraph graph = new StateGraph("interview-pipeline", keyStrategyFactory);
 
-        graph.addNode("analyze_jd", node_async(this::analyzeJd));
-        graph.addNode("match_resume", node_async(this::matchResume));
-        graph.addNode("plan_questions", node_async(this::planQuestions));
-        graph.addNode("ask_question", node_async(this::askQuestion));
-        graph.addNode("grade_answer", node_async(this::gradeAnswer));
-        graph.addNode("ask_followup", node_async(this::askFollowup));
-        graph.addNode("evaluate", node_async(this::evaluate));
-        graph.addNode("review", node_async(this::review));
+        graph.addNode("analyze_jd", node_async(state ->
+                traced("analyze_jd", "JdAnalysisAgent", state, () -> analyzeJd(state))));
+        graph.addNode("match_resume", node_async(state ->
+                traced("match_resume", "ResumeMatchAgent", state, () -> matchResume(state))));
+        graph.addNode("plan_questions", node_async(state ->
+                traced("plan_questions", "QuestionPlannerAgent", state, () -> planQuestions(state))));
+        graph.addNode("ask_question", node_async(this::askQuestionTraced));
+        graph.addNode("grade_answer", node_async(state ->
+                traced("grade_answer", "InterviewerAgent", state, () -> gradeAnswer(state))));
+        graph.addNode("ask_followup", node_async(this::askFollowupTraced));
+        graph.addNode("evaluate", node_async(state ->
+                traced("evaluate", "EvaluationAgent", state, () -> evaluate(state))));
+        graph.addNode("review", node_async(state ->
+                traced("review", "ReviewPlannerAgent", state, () -> review(state))));
 
         graph.addEdge(START, "analyze_jd");
         graph.addEdge("analyze_jd", "match_resume");
@@ -193,6 +204,13 @@ public class InterviewOrchestrator {
         List<String> weak = longTermMemoryService.topWeakTopics(userId, 5);
         List<Question> questions = questionPlannerAgent.plan(
                 jd, match, resume, appConfig.getInterview().getMaxQuestions(), weak, difficulty);
+        long bank = questions.stream().filter(q -> q.getSource() == QuestionSource.BANK).count();
+        long generated = questions.stream().filter(q -> q.getSource() == QuestionSource.GENERATED).count();
+        AiTraceContext.ActiveSpan agentSpan = AiTraceContext.currentAgentSpan();
+        if (agentSpan != null) {
+            agentSpan.draft().getAttributes().put("bankQuestionCount", bank);
+            agentSpan.draft().getAttributes().put("generatedQuestionCount", generated);
+        }
         emit(sessionId, "question_plan", "已准备 " + questions.size() + " 道题，开始面试", questions.stream()
                 .map(q -> Map.of("topic", q.getTopic(), "type", q.getType(), "source", q.getSource().name()))
                 .toList());
@@ -202,21 +220,27 @@ public class InterviewOrchestrator {
         );
     }
 
+    /**
+     * Agent span excludes human answer wait time.
+     */
     @SuppressWarnings("unchecked")
-    private Map<String, Object> askQuestion(OverAllState state) throws Exception {
+    private Map<String, Object> askQuestionTraced(OverAllState state) throws Exception {
+        String sessionId = state.value(InterviewStateKeys.SESSION_ID, "");
         if (isQuit(state)) {
             return Map.of(InterviewStateKeys.QUIT, true, InterviewStateKeys.NEXT_ROUTE, "end");
         }
-        String sessionId = state.value(InterviewStateKeys.SESSION_ID, "");
         List<Question> questions = state.value(InterviewStateKeys.QUESTIONS, List.of());
         int index = state.value(InterviewStateKeys.QUESTION_INDEX, 0);
         if (index >= questions.size()) {
             return Map.of(InterviewStateKeys.NEXT_ROUTE, "evaluate");
         }
         Question q = questions.get(index);
-        String presented = interviewerAgent.presentQuestion(q, index, questions.size());
-        emit(sessionId, "question", presented, q);
-        answerBridge.prepare(sessionId);
+        traced("ask_question", "InterviewerAgent", state, () -> {
+            String presented = interviewerAgent.presentQuestion(q, index, questions.size());
+            emit(sessionId, "question", presented, q);
+            answerBridge.prepare(sessionId);
+            return Map.of();
+        });
         String answer = answerBridge.await(sessionId, appConfig.getInterview().getAnswerTimeoutSeconds());
         if (quitFlags.getOrDefault(sessionId, false)) {
             return Map.of(InterviewStateKeys.QUIT, true, InterviewStateKeys.NEXT_ROUTE, "end");
@@ -274,38 +298,43 @@ public class InterviewOrchestrator {
     }
 
     @SuppressWarnings("unchecked")
-    private Map<String, Object> askFollowup(OverAllState state) throws Exception {
+    private Map<String, Object> askFollowupTraced(OverAllState state) throws Exception {
         if (isQuit(state)) {
             return Map.of(InterviewStateKeys.QUIT, true, InterviewStateKeys.NEXT_ROUTE, "end");
         }
         String sessionId = state.value(InterviewStateKeys.SESSION_ID, "");
         String followup = state.value(InterviewStateKeys.FOLLOWUP_QUESTION, "");
-        emit(sessionId, "followup", "追问：" + followup, null);
-        answerBridge.prepare(sessionId);
+        traced("ask_followup", "InterviewerAgent", state, () -> {
+            emit(sessionId, "followup", "追问：" + followup, null);
+            answerBridge.prepare(sessionId);
+            return Map.of();
+        });
         String followAnswer = answerBridge.await(sessionId, appConfig.getInterview().getAnswerTimeoutSeconds());
         if (quitFlags.getOrDefault(sessionId, false)) {
             return Map.of(InterviewStateKeys.QUIT, true, InterviewStateKeys.NEXT_ROUTE, "end");
         }
 
-        List<Question> questions = state.value(InterviewStateKeys.QUESTIONS, List.of());
-        int index = state.value(InterviewStateKeys.QUESTION_INDEX, 0);
-        Question q = questions.get(index);
-        String answer = state.value(InterviewStateKeys.CURRENT_ANSWER, "");
-        InterviewerAgent.GradeResult grade = state.value(InterviewStateKeys.LAST_GRADE, InterviewerAgent.GradeResult.class)
-                .orElse(null);
-        List<InterviewTurn> turns = new ArrayList<>(state.value(InterviewStateKeys.TURNS, List.of()));
-        turns.add(interviewerAgent.buildTurn(q, answer, grade, followAnswer));
+        return traced("ask_followup_record", "InterviewerAgent", state, () -> {
+            List<Question> questions = state.value(InterviewStateKeys.QUESTIONS, List.of());
+            int index = state.value(InterviewStateKeys.QUESTION_INDEX, 0);
+            Question q = questions.get(index);
+            String answer = state.value(InterviewStateKeys.CURRENT_ANSWER, "");
+            InterviewerAgent.GradeResult grade = state.value(InterviewStateKeys.LAST_GRADE, InterviewerAgent.GradeResult.class)
+                    .orElse(null);
+            List<InterviewTurn> turns = new ArrayList<>(state.value(InterviewStateKeys.TURNS, List.of()));
+            turns.add(interviewerAgent.buildTurn(q, answer, grade, followAnswer));
 
-        Map<String, Object> updates = new HashMap<>();
-        updates.put(InterviewStateKeys.TURNS, turns);
-        updates.put(InterviewStateKeys.QUESTION_INDEX, index + 1);
-        updates.put(InterviewStateKeys.FOLLOWUP_PENDING, false);
-        if (index + 1 >= questions.size()) {
-            updates.put(InterviewStateKeys.NEXT_ROUTE, "evaluate");
-        } else {
-            updates.put(InterviewStateKeys.NEXT_ROUTE, "next");
-        }
-        return updates;
+            Map<String, Object> updates = new HashMap<>();
+            updates.put(InterviewStateKeys.TURNS, turns);
+            updates.put(InterviewStateKeys.QUESTION_INDEX, index + 1);
+            updates.put(InterviewStateKeys.FOLLOWUP_PENDING, false);
+            if (index + 1 >= questions.size()) {
+                updates.put(InterviewStateKeys.NEXT_ROUTE, "evaluate");
+            } else {
+                updates.put(InterviewStateKeys.NEXT_ROUTE, "next");
+            }
+            return updates;
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -373,5 +402,30 @@ public class InterviewOrchestrator {
         if (sink != null) {
             sink.emit(type, content, data);
         }
+    }
+
+    private Map<String, Object> traced(
+            String node, String agent, OverAllState state, Callable<Map<String, Object>> action) throws Exception {
+        String sessionId = state.value(InterviewStateKeys.SESSION_ID, "");
+        return traceContext.runWithSession(sessionId, () -> {
+            traceContext.setAgentNode(agent, node);
+            try (AiTraceContext.ActiveSpan span = traceContext.startSpan(SpanType.AGENT, "agent." + node)) {
+                span.draft().setAgent(agent);
+                span.draft().setNode(node);
+                try {
+                    Map<String, Object> result = action.call();
+                    span.ok();
+                    return result;
+                } catch (Exception e) {
+                    span.error(e);
+                    if (e instanceof RuntimeException re) {
+                        throw re;
+                    }
+                    throw new RuntimeException(e);
+                }
+            } finally {
+                traceContext.setAgentNode(null, null);
+            }
+        });
     }
 }

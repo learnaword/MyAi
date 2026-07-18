@@ -9,6 +9,8 @@
 | [AGENTS.md](../AGENTS.md) | 仓库级 Agent 速查（目录/主链路/约定） |
 | `.cursor/rules/interview-agent-context.mdc` | Cursor **始终应用**的精简架构记忆 |
 | `.cursor/rules/api-change-frontend-docs.mdc` | 接口变更时必须输出前端修改文档 |
+| `.cursor/rules/requirements-delivery-pipeline.mdc` | 需求设计：**你点名做哪项**，非自动流水 |
+| [requirements_pipeline.md](./requirements_pipeline.md) | 点名制说明与口令 |
 | 下方 `docs/` | 详细事实来源；改架构时先改这里 |
 
 ## 总览
@@ -18,6 +20,8 @@
 | [architecture.md](./architecture.md) | 系统架构、多 Agent、StateGraph、RAG、数据流 |
 | [tech.md](./tech.md) | 启动运行、环境变量、基础设施、排障 |
 | [features/](./features/) | **按功能拆分的技术文档**（见下表） |
+| [ai_full_link_analysis/](./ai_full_link_analysis/) | AI 全链路可观测（PRD / 技术方案 / 库表 / API） |
+| [ai_observability_frontend.md](./ai_observability_frontend.md) | 可观测 REST + 可选 `traceId` 的前端修改说明 |
 
 ## 功能文档
 

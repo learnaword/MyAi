@@ -1,6 +1,7 @@
 package com.interview.agent.config;
 
 import com.interview.agent.auth.JwtAuthFilter;
+import com.interview.agent.observability.web.ObservabilityAdminFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ public class SecurityConfig {
 
     private final AppConfig appConfig;
     private final JwtAuthFilter jwtAuthFilter;
+    private final ObservabilityAdminFilter observabilityAdminFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -54,14 +56,17 @@ public class SecurityConfig {
         if (appConfig.getAuth().isEnabled()) {
             http.authorizeHttpRequests(auth -> auth
                             .requestMatchers(
-                                    "/", "/index.html", "/css/**", "/js/**", "/favicon.ico",
+                                    "/", "/index.html", "/obs.html", "/css/**", "/js/**", "/favicon.ico",
                                     "/api/register", "/api/login", "/health", "/ws/**")
                             .permitAll()
+                            .requestMatchers("/api/observability/**").permitAll()
                             .anyRequest().authenticated())
                     .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         } else {
             http.authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         }
+
+        http.addFilterBefore(observabilityAdminFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

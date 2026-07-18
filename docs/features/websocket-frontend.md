@@ -36,6 +36,10 @@
 
 `system` / `chat` / `error` / `interview_started` / `phase` / `jd_analysis` / `match_report` / `question_plan` / `question` / `followup` / `grade` / `evaluation` / `review_plan` / `done` / `upload_result`
 
+### 可选出站字段（AI 可观测）
+
+当 `app.observability.enabled=true` 时，部分出站 JSON 可带 `traceId`（不新增 type，老客户端可忽略）。详见 [AI 全链路 API](../ai_full_link_analysis/api_design_ai_full_link_analysis.md) 与 [前端修改文档](../ai_observability_frontend.md)。
+
 ## 关键类
 
 | 类 | 职责 |

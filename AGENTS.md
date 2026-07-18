@@ -52,7 +52,8 @@ make infra-up && make run
 
 ## 协作约定
 
-1. 架构/包结构/WS 协议变更：先改 `docs/`，再改代码与本文件要点。
-2. **接口变更**（新增/改请求/改响应）：必须按 `.cursor/rules/api-change-frontend-docs.mdc` 输出前端修改文档到 `docs/`。
-3. 勿提交 `.env`；密钥只用本地环境。
-4. 题库在内存，重启后需重新上传（示例 `question.md`）。
+1. **需求设计点名制**（默认）：不做固定流水；你指定做 PRD / 技术方案 / 库表 / API / Task / 规范 / Context / 编码中的哪一项，一次只做该项，审查或修改后再由你点下一项。详见 `docs/requirements_pipeline.md`。
+2. 架构/包结构/WS 协议变更：先改 `docs/`，再改代码与本文件要点。
+3. **接口变更**（新增/改请求/改响应）：必须按 `.cursor/rules/api-change-frontend-docs.mdc` 输出前端修改文档到 `docs/`。
+4. 勿提交 `.env`；密钥只用本地环境。
+5. 题库在内存，重启后需重新上传（示例 `question.md`）。

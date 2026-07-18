@@ -1,6 +1,7 @@
 package com.interview.agent.rag;
 
 import com.interview.agent.model.Question;
+import com.interview.agent.observability.AiTraceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -10,7 +11,6 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
@@ -19,14 +19,20 @@ import java.util.List;
 public class LlmReranker {
 
     private final ChatModel chatModel;
+    private final AiTraceContext traceContext;
 
-    public List<Question> rerank(String query, List<Question> candidates, int topN) {
+    public record RerankOutcome(List<Question> questions, boolean attempted, boolean fallback) {}
+
+    public RerankOutcome rerank(String query, List<Question> candidates, int topN) {
         if (candidates == null || candidates.isEmpty()) {
-            return List.of();
+            return new RerankOutcome(List.of(), false, false);
         }
         if (candidates.size() <= topN) {
-            return candidates;
+            return new RerankOutcome(candidates, false, false);
         }
+        String prevAgent = traceContext.agent();
+        String prevNode = traceContext.node();
+        traceContext.setAgentNode("LlmReranker", "rerank");
         try {
             StringBuilder sb = new StringBuilder();
             sb.append("查询方向: ").append(query).append("\n候选题目:\n");
@@ -51,11 +57,14 @@ public class LlmReranker {
                 if (ordered.size() >= topN) break;
             }
             if (!ordered.isEmpty()) {
-                return ordered;
+                return new RerankOutcome(ordered, true, false);
             }
+            return new RerankOutcome(candidates.stream().limit(topN).toList(), true, true);
         } catch (Exception e) {
             log.warn("[Rerank] fallback to original order: {}", e.getMessage());
+            return new RerankOutcome(candidates.stream().limit(topN).toList(), true, true);
+        } finally {
+            traceContext.setAgentNode(prevAgent, prevNode);
         }
-        return candidates.stream().limit(topN).toList();
     }
 }

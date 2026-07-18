@@ -53,3 +53,20 @@ app:
   interview:
     max-questions: ${INTERVIEW_MAX_QUESTIONS:5}
     answer-timeout-seconds: ${INTERVIEW_ANSWER_TIMEOUT:300}
+  observability:
+    enabled: ${OBS_ENABLED:true}
+    retain-days: ${OBS_RETAIN_DAYS:14}
+    queue-capacity: 10000
+    flush-batch-size: 100
+    store-prompt: false
+    admin-token: ${OBS_ADMIN_TOKEN:}
+    cost-currency: CNY
+    default-model: ${LLM_MODEL:qwen-plus}
+    attach-trace-id-types: "*"
+    pricing:
+      qwen-plus:
+        input-per-1k: 0.0008
+        output-per-1k: 0.002
+      default:
+        input-per-1k: 0.0008
+        output-per-1k: 0.002

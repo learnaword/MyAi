@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Observability</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3d9cf0;
+      --line: #2a3548;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1b2a44, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; letter-spacing: 0.02em; }
+    p { color: var(--muted); margin: 0 0 20px; }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: end; }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+    input {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 180px;
+    }
+    button {
+      background: var(--accent);
+      color: #041018;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { filter: brightness(1.08); }
+    pre, table {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      width: 100%;
+    }
+    pre {
+      padding: 14px;
+      overflow: auto;
+      max-height: 420px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    table { border-collapse: collapse; margin-top: 12px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; font-size: 13px; }
+    th { color: var(--muted); font-weight: 600; }
+    .err { color: #ff8e8e; margin-top: 8px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>AI Observability</h1>
+  <p>研发向全链路查询台。Token 仅保存在本机 sessionStorage，不会写入仓库。</p>
+
+  <div class="row">
+    <label>Admin Token
+      <input id="obsToken" type="password" autocomplete="off" placeholder="OBS_ADMIN_TOKEN" />
+    </label>
+    <label>TraceId
+      <input id="traceIdInput" placeholder="paste traceId" />
+    </label>
+    <button id="btnLoadTrace" type="button">加载链路</button>
+  </div>
+
+  <div class="row">
+    <label>From
+      <input id="fromInput" type="datetime-local" />
+    </label>
+    <label>To
+      <input id="toInput" type="datetime-local" />
+    </label>
+    <button id="btnLoadStats" type="button">加载统计</button>
+    <button id="btnStatus" type="button">模块状态</button>
+  </div>
+
+  <div id="err" class="err"></div>
+  <pre id="traceView">{}</pre>
+  <table id="statsTable">
+    <thead><tr><th>指标</th><th>值</th></tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <script src="/js/obs.js"></script>
+</body>
+</html>
